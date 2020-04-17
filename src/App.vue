@@ -19,6 +19,8 @@ export default {
     return {
       isloaded:false,
       data: {},
+      draw: null,
+      selected :null,
       map: null,
       mapboxKey: 'pk.eyJ1Ijoic291cnlidW5ueSIsImEiOiJjazhvOHpodDAwMG8wM2x0ZHE3b3NsbGZoIn0.bq_KvAx7F-v9_OyfsyjNdA'
     }
@@ -40,9 +42,17 @@ export default {
       console.log(error)
     })
     await this.init();
+    await this.initDraw();
     this.map.on("load", () => {
         this.isloaded = true;
+        console.log(this.draw)
         this.map.addControl(new mapboxgl.NavigationControl(), "top-right");
+        this.map.addControl(this.draw);
+        this.map.on("draw.selectionchange", e => {
+            console.log("selection change",e)
+            this.selected = e.features[0];
+        });
+        
     })
   },
   methods: {
@@ -54,15 +64,39 @@ export default {
         container: "map",
         // style: 'mapbox://styles/mapbox/streets-v11',
         style: 'mapbox://styles/mapbox/light-v10',
-        center: [76.81350249690618, 22.78900060506338],
+        center: [80.81350249690618, 22.78900060506338],
         minZoom: 4,
         zoom: 0,
         attributionControl: false
         })
       
-    }
+    },
+    initDraw(){
+      this.draw = new MapboxDraw({
+          keybindings: false,
+          userProperties: true,
+          displayControlsDefault: true,
+      })
+  },
+  addPopup(data){
+    var  popup = new mapboxgl.Popup({closeButton: false,
+      closeOnClick: false})
+      popup.setLngLat(data.coordinates)
+      .setHTML(data.active)
+      .addTo(this.map);
+  }
   },
   watch: {
+    selected: function(val){
+      if(val){
+      var coordinates = this.selected.geometry.coordinates[0][0];
+      coordinates[0]=coordinates[0]-0.1;
+      coordinates[1]=coordinates[1]-0.1;
+      var active = this.selected.properties.active;
+      console.log(coordinates)
+      this.addPopup({coordinates:coordinates,active:active})
+      }
+    },
     isloaded: function(val) {
       if(val && this.data.features.length>0) {
         let data = this.data;
@@ -70,6 +104,7 @@ export default {
           'type': 'geojson',
           'data': data
         });
+        this.draw.add(data);
         this.map.addLayer({
         'id': 'covid',
         'type': 'fill',
@@ -104,6 +139,7 @@ export default {
           'fill-opacity': 0.7
         }
         });
+        
       }
     }
   }
@@ -128,6 +164,11 @@ body { margin: 0; padding: 0; }
   bottom: 2rem;
   z-index: 99999;
   color: crimson;
+}
+.mapboxgl-popup {
+max-width: 400px;
+font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+z-index: 999999999;
 }
 </style>
 
