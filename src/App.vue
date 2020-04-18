@@ -15,6 +15,13 @@ export default {
   name: 'App',
   components: {
   },
+  computed: {
+    selectedItem: {
+      get(){
+        return this.selected;
+      }
+    }
+  },
   data(){
     return {
       isloaded:false,
@@ -49,8 +56,10 @@ export default {
         this.map.addControl(new mapboxgl.NavigationControl(), "top-right");
         this.map.addControl(this.draw);
         this.map.on("draw.selectionchange", e => {
+            this.selected = null;
             console.log("selection change",e)
             this.selected = e.features[0];
+            
         });
         
     })
@@ -75,26 +84,39 @@ export default {
       this.draw = new MapboxDraw({
           keybindings: false,
           userProperties: true,
-          displayControlsDefault: true,
+          displayControlsDefault: false,
       })
   },
   addPopup(data){
-    var  popup = new mapboxgl.Popup({closeButton: false,
+    var  popup = new mapboxgl.Popup({closeButton: true,
       closeOnClick: false})
       popup.setLngLat(data.coordinates)
-      .setHTML(data.active)
+      .setHTML(
+        '<h3>'+data.info.name+'</h3>'+
+        '<p class="title">Active: <span class="active-count">'+data.info.active+'</span></p>'+
+        '<p class="title">Recovered: <span class="recovered-count">'+data.info.recovered+'</span></p>'+
+        '<p class="title">Deaths: <span class="deaths-count">'+data.info.deaths+'</span></p>')
       .addTo(this.map);
+    this.map.flyTo({
+      center: data.coordinates,
+      zoom: 6,
+      curve: 1
+      });
   }
   },
   watch: {
-    selected: function(val){
+    selectedItem: function(val){
       if(val){
-      var coordinates = this.selected.geometry.coordinates[0][0];
-      coordinates[0]=coordinates[0]-0.1;
-      coordinates[1]=coordinates[1]-0.1;
-      var active = this.selected.properties.active;
-      console.log(coordinates)
-      this.addPopup({coordinates:coordinates,active:active})
+        var coordinates=[];
+            coordinates[0]=this.selectedItem.properties.longitude;
+            coordinates[1]=this.selectedItem.properties.latitude;
+            console.log(coordinates)
+            var info ={}
+            info.name = this.selectedItem.properties.name;
+            info.active = this.selectedItem.properties.active;
+            info.recovered = this.selectedItem.properties.recovered;
+            info.deaths = this.selectedItem.properties.deaths;
+            this.addPopup({coordinates:coordinates,info:info})
       }
     },
     isloaded: function(val) {
@@ -111,6 +133,7 @@ export default {
         'source': 'covid',
         'layout': {},
         'paint': {
+          'fill-outline-color': 'rgba(218, 6, 6, 0.685)',
           'fill-color': [
           'interpolate',
           ['linear'],
@@ -170,5 +193,22 @@ max-width: 400px;
 font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
 z-index: 999999999;
 }
+.active-count {
+  color: rgba(218, 6, 6, 0.685);
+  font-weight: bold;
+}
+.recovered-count {
+  color: rgba(2, 107, 2, 0.726);
+  font-weight: bold;
+}
+.deaths-count {
+  color: black;
+  font-weight: bold;
+}
+.title {
+  color: gray;
+  text-align: left;
+}
+
 </style>
 
