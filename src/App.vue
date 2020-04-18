@@ -52,12 +52,10 @@ export default {
     await this.initDraw();
     this.map.on("load", () => {
         this.isloaded = true;
-        console.log(this.draw)
         this.map.addControl(new mapboxgl.NavigationControl(), "top-right");
         this.map.addControl(this.draw);
         this.map.on("draw.selectionchange", e => {
             this.selected = null;
-            console.log("selection change",e)
             this.selected = e.features[0];
             
         });
@@ -110,7 +108,7 @@ export default {
         var coordinates=[];
             coordinates[0]=this.selectedItem.properties.longitude;
             coordinates[1]=this.selectedItem.properties.latitude;
-            console.log(coordinates)
+            
             var info ={}
             info.name = this.selectedItem.properties.name;
             info.active = this.selectedItem.properties.active;
