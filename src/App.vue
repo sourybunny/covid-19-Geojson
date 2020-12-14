@@ -1,22 +1,33 @@
 <template>
   <div id="app">
-    <div class="map-wrapper">
-      <div id="map"></div>
-      <div class="map-overlay" id="features">
-        <h2></h2>
-        <div id="pd"><p>Click on country!</p></div>
+    <div class="top-bar my-auto">
+      <p class="text-center ">Coronavirus COVID-19 Global cases</p>
+    </div>
+    <div id="sidebar">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">Global Cases</h5>
+          <p class="card-text h3">493864948</p>
+        </div>
       </div>
-      <div class="map-overlay" id="legend">
-        <h4>Total Cases</h4>
+      <div class="card text-center country-cases smooth-scroll list-unstyled">
+        <div class="card-body">
+          <h5 class="card-title">Country wise cases</h5>
+          <p class="card-text h3">493864948</p>
+        </div>
       </div>
-      <div class="footer">Data from RapidApi covid19-data</div>
+    </div>
+    <div id="map"></div>
+    <div class="map-overlay" id="legend">
+      <h4>Total Cases</h4>
+      <h5>India</h5>
     </div>
   </div>
 </template>
 
 <script>
   import axios from "axios";
-
+  import { distanceInWordsToNow, fromUnixTime } from "date-fns";
   export default {
     name: "App",
     components: {},
@@ -88,8 +99,7 @@
           },
         });
 
-        
-// let map =this.map;
+        // let map =this.map;
         this.countries.features.forEach((marker) => {
           // map.loadImage(marker.properties.countryInfo.flag, (error, image)=> {
           //   if (error) throw error;
@@ -121,16 +131,19 @@
           var el = document.createElement("div");
           el.className = "marker";
           el.style.backgroundImage = `url("${marker.properties.countryInfo.flag}")`;
-          console.log(el.style.backgroundImage);
           el.style.width = "12px";
           el.style.height = "9px";
-          el.style.opacity=0.6;
+          el.style.opacity = 0.6;
 
-          new mapboxgl.Marker(el,{offset: {
-            x: 0,
-            y: -14
-        }}).setLngLat(marker.geometry.coordinates).addTo(this.map);
-          });
+          new mapboxgl.Marker(el, {
+            offset: {
+              x: 0,
+              y: -14,
+            },
+          })
+            .setLngLat(marker.geometry.coordinates)
+            .addTo(this.map);
+        });
         this.map.addLayer({
           id: "unclustered-point",
           type: "circle",
@@ -161,22 +174,27 @@
         let popup = new mapboxgl.Popup({
           closeButton: false,
           closeOnClick: false,
+          className: "country-details",
         });
 
-        this.map.on("click", "unclustered-point", (e) => {
-          var coordinates = e.features[0].geometry.coordinates.slice();
-          var active = e.features[0].properties.active;
-
+        this.map.on("mouseenter", "unclustered-point", (e) => {
+          // this.openCountryPopup(e);
+          let coordinates = e.features[0].geometry.coordinates.slice();
+          // var active = e.features[0].properties.active;
+          let popup_data = this.getPopupHtml(e.features[0].properties);
           while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
             coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
           }
 
-          new mapboxgl.Popup()
+          popup
             .setLngLat(coordinates)
-            .setHTML("active: " + active)
+            .setHTML(popup_data)
             .addTo(this.map);
         });
-
+        this.map.on("mouseleave", "unclustered-point", (e) => {
+          this.map.getCanvas().style.cursor = "";
+          popup.remove();
+        });
         this.map.on("mouseenter", "clusters", () => {
           this.map.getCanvas().style.cursor = "pointer";
         });
@@ -212,6 +230,24 @@
           userProperties: true,
           displayControlsDefault: false,
         });
+      },
+      getPopupHtml(props) {
+        let flag = JSON.parse(props.countryInfo).flag;
+        return `
+          <span class="popup-wrapper">
+        <span class="country-card">
+          <h2>${props.country}</h2>
+          <div class="country-card--flag">
+            <img src="${flag}" />
+          </div>
+          <ul>
+            <li>Confirmed: ${props.cases}</li>
+            <li>Deaths: ${props.deaths}</li>
+            <li>Recovered: ${props.recovered}</li>
+          </ul>
+        </span>
+      </span>
+      `;
       },
       async get_india_data() {
         this.data = await axios({
@@ -266,7 +302,7 @@
           "data": data,
         });
         this.draw.add(data);
-        var layers = ["0 - 500", "500 - 1000", "1000 - 5000", "5000 - 10,000", "10,000 - 25,000", "25,000 - 50,000", "50,000 +"];
+        var layers = ["0 - 500", "500 - 1,000", "1,000 - 5,000", "5,000 - 10,000", "10,000 - 25,000", "25,000 - 50,000", "50,000 +"];
         var colors = ["#FFEDA0", "#FFEC19", "#e96d28", "#df2c2b", "#b6421f", "#610d0e", "#350202"];
         layers.forEach((layer, i) => {
           var layer = layers[i];
@@ -371,26 +407,53 @@
   };
 </script>
 
-<style>
+<style lang="scss">
+  html {
+    font-size: 16px;
+  }
   #app {
     font-family: Avenir, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color: #2c3e50;
-    margin-top: 60px;
+    color: white;
   }
   body {
     margin: 0;
     padding: 0;
   }
-
+  .top-bar {
+    background: #1c1d1d;
+    height: 3rem;
+    color: white;
+  }
   #map {
     position: absolute;
-    top: 0;
-    bottom: 5px;
-    width: 100%;
+    top: 3rem;
+    height: 80vh;
+    bottom: 1px;
+    right: 0;
+    width: 85vw;
   }
-
+  #sidebar {
+    position: absolute;
+    top: 0;
+    height: 100vh;
+    left: 0;
+    width: 15vw;
+    background: #1c1d1d;
+    .card {
+      margin: 0.5rem;
+      margin-top: 3rem;
+      border-radius: 0.3rem;
+      padding: 0.5rem;
+      background: #3c4952;
+    }
+    .country-cases {
+      margin-top: 1rem;
+      height: 70vh;
+      overflow: auto;
+    }
+  }
   .footer {
     position: absolute;
     bottom: 2rem;
@@ -420,10 +483,12 @@
   }
   .map-overlay {
     position: absolute;
-    bottom: 0;
+    bottom: 7.4rem;
     right: 0;
     background: rgba(255, 255, 255, 0.8);
-    margin-right: 20px;
+    background-color: #3c4952;
+    color: white;
+    margin-right: 0.5rem;
     font-family: Arial, sans-serif;
     overflow: auto;
     border-radius: 3px;
@@ -439,13 +504,13 @@
   }
 
   #legend {
-    padding: 10px;
+    padding: 15px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     line-height: 18px;
     height: 150px;
     margin-bottom: 40px;
     width: 150px;
-    height: 16rem;
+    height: 270px;
   }
 
   .legend-key {
@@ -463,5 +528,51 @@
     /* border-radius: 50%; */
     cursor: pointer;
     padding: 0;
+  }
+
+  .country-details .mapboxgl-popup-content {
+    background-color: #212b31;
+    color: white;
+    border-radius: 0.3rem;
+    box-shadow: 0 2px 15px rgba(black, 0.7);
+    width: 12.3rem;
+    .country-card {
+      position: relative;
+      &--flag {
+        position: absolute;
+        top: 0.2rem;
+        left: 9.35rem;
+
+        img {
+          box-shadow: 0 1px 6px rgba(black, 0.5);
+          height: 2rem;
+          width: 3rem;
+        }
+      }
+      h2 {
+        font-size: 1.5em;
+        line-height: 1.2;
+        margin-bottom: 0.1em;
+        margin-top: 0;
+      }
+
+      h3 {
+        font-size: 1.2em;
+        margin: 0.1em 0;
+        font-weight: normal;
+        color: grey;
+      }
+
+      ul,
+      p {
+        font-weight: normal;
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0.6em 0 0;
+      }
+    }
   }
 </style>
