@@ -1,26 +1,69 @@
 <template>
   <div id="app">
     <div class="top-bar my-auto">
-      <p class="text-center ">Coronavirus COVID-19 Global cases</p>
+      <p class="text-center top-bar__title">Coronavirus COVID-19 Global Cases Visualization
+        <a style="color:white;margin-left:1rem;"
+        href="https://github.com/sourybunny/covid-19-Geojson"
+        target="_blank"
+      >
+        <i class="fa fa-github"></i>
+        Github
+      </a>
+      </p>
+      
     </div>
     <div id="sidebar">
       <div class="card text-center">
+        <div class="h4">Today</div>
+        <hr />
         <div class="card-body">
-          <h5 class="card-title">Global Cases</h5>
-          <p class="card-text h3">493864948</p>
+          <div class="h3 my-0">{{ global.todayCases | comma }}</div>
+          <div class="card-title">Cases</div>
+          <!-- <div class="">{{ global.todayDeaths | comma }}</div>
+          <div class="card-title">Deaths</div>
+          <div class="">{{ global.todayRecovered | comma }}</div>
+          <div class="card-title">Recovered</div> -->
         </div>
       </div>
-      <div class="card text-center country-cases smooth-scroll list-unstyled">
+      <div class="card text-center">
+        <div class="h4">Global Total</div>
+        <hr />
         <div class="card-body">
-          <h5 class="card-title">Country wise cases</h5>
-          <p class="card-text h3">493864948</p>
+          <div class="h3">{{ global.cases | comma }}</div>
+          <h5 class="card-title">Cases</h5>
+          <div class="">{{ global.casesPerOneMillion | comma }}</div>
+          <div class="card-title">Per 1 Million</div>
+        </div>
+        <hr />
+        <div class="card-body">
+          <div class="h3">{{ global.deaths | comma }}</div>
+          <h5 class="card-title">Deaths</h5>
+          <div>{{ global.deathsPerOneMillion | comma }}</div>
+          <div class="card-title">Per 1 Million</div>
+        </div>
+        <hr />
+        <div class="card-body pb-4">
+          <div class="h3">{{ global.recovered | comma }}</div>
+          <h5 class="card-title">Recovered</h5>
+          <div>{{ global.recoveredPerOneMillion | comma }}</div>
+          <div class="card-title">Per 1 Million</div>
         </div>
       </div>
     </div>
     <div id="map"></div>
+    <div class="info">
+      <p></p>
+      <div>
+        This application uses
+        <a href="https://rapidapi.com/ShubhGupta/api/covid19-data/details" target="_blank" rel="noopener noreferrer"
+          >RapidApi Covid-19 Geojson Data</a
+        >
+        and <a href="https://github.com/ExpDev07/coronavirus-tracker-api" target="_blank">NovelCovidApi</a>
+      </div>
+    </div>
     <div class="map-overlay" id="legend">
-      <h4>Total Cases</h4>
-      <h5>India</h5>
+      <h4>India</h4>
+      <h5>Total Cases</h5>
     </div>
   </div>
 </template>
@@ -43,6 +86,7 @@
         isloaded: false,
         countries: {},
         data: {},
+        global: {},
         draw: null,
         selected: null,
         map: null,
@@ -52,6 +96,7 @@
     },
 
     async mounted() {
+      await this.getGlobalData();
       await this.get_india_data();
       await this.get_countries_data();
       await this.init();
@@ -67,6 +112,18 @@
       });
     },
     methods: {
+      async getGlobalData() {
+        let response;
+        try {
+          response = await axios.get("https://corona.lmao.ninja/v2/all");
+        } catch (e) {
+          console.log("error");
+          return;
+        }
+        const { data = {} } = response;
+        this.global = { ...data };
+        console.log(data);
+      },
       async get_countries() {
         // this.map.on("load", () => {
         this.map.addSource("coronacases", {
@@ -353,16 +410,16 @@
         popup
           .setLngLat(data.coordinates)
           .setHTML(
-            "<h3>" +
+            "<h4 style='color:black'>" +
               data.info.name +
-              "</h3>" +
-              '<p class="title">Active: <span class="active-count">' +
+              "</h4>" +
+              '<p class="title">Active: <span class="">' +
               data.info.active +
               "</span></p>" +
-              '<p class="title">Recovered: <span class="recovered-count">' +
+              '<p class="title">Recovered: <span class="">' +
               data.info.recovered +
               "</span></p>" +
-              '<p class="title">Deaths: <span class="deaths-count">' +
+              '<p class="title">Deaths: <span class="">' +
               data.info.deaths +
               "</span></p>"
           )
@@ -415,7 +472,6 @@
     font-family: Avenir, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color: white;
   }
   body {
     margin: 0;
@@ -425,33 +481,64 @@
     background: #1c1d1d;
     height: 3rem;
     color: white;
+    &__title {
+      padding: 0.8rem;
+      font-size: 1.1rem;
+      opacity: 0.8;
+    }
   }
   #map {
     position: absolute;
     top: 3rem;
-    height: 80vh;
-    bottom: 1px;
+    height: 88%;
+    bottom: 0;
     right: 0;
-    width: 85vw;
+    // width: calc(100vw - 15rem);
+    width: 84%;
   }
   #sidebar {
+    color: white;
     position: absolute;
-    top: 0;
-    height: 100vh;
+    top: 2.7rem;
+    height: auto;
+    // min-height: 100vh;
     left: 0;
-    width: 15vw;
+    width: 16%;
     background: #1c1d1d;
     .card {
       margin: 0.5rem;
-      margin-top: 3rem;
-      border-radius: 0.3rem;
-      padding: 0.5rem;
+      border-radius: 0.2rem;
+      padding: 0rem;
       background: #3c4952;
+      padding: 0.3rem 0rem 1rem;
+      &-body {
+        .card-title {
+          opacity: 0.8;
+        }
+      }
+      hr {
+        margin: 0;
+        margin-top: 0.7rem;
+        opacity: 0.3;
+      }
     }
     .country-cases {
       margin-top: 1rem;
       height: 70vh;
       overflow: auto;
+    }
+  }
+  .info {
+    color: black;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    // width: calc(100vw - 15rem);
+    width: 84%;
+    background: lightgray;
+    padding-left: 1rem;
+    div {
+      padding-bottom: 0.4rem;
     }
   }
   .footer {
@@ -483,7 +570,7 @@
   }
   .map-overlay {
     position: absolute;
-    bottom: 7.4rem;
+    bottom: 4rem;
     right: 0;
     background: rgba(255, 255, 255, 0.8);
     background-color: #3c4952;

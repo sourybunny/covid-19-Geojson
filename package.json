@@ -11,7 +11,8 @@
     "axios": "^0.19.2",
     "core-js": "^3.6.4",
     "date-fns": "^2.16.1",
-    "vue": "^2.6.11"
+    "vue": "^2.6.11",
+    "vue-comma-filter": "^1.1.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^4.3.0",
